@@ -1,0 +1,69 @@
+plugins {
+    id 'java'
+}
+
+apply plugin: 'java'
+apply plugin: 'application'
+
+version 'unspecified'
+
+mainClassName = 'com.uwaterloo.datadriven.Main'
+
+def versions = [
+        ScalaBinary : '2.13'
+]
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://repo.akka.io/maven"
+    }
+}
+
+distributions {
+    main {
+        distributionBaseName = 'data-driven'
+        // include the configuration files into the distribution zip
+        contents {
+            into('/' + distributions.main.distributionBaseName) {
+                from '.'
+                include 'dat/*'
+            }
+        }
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ["src/main/java"]
+        }
+        resources {
+            srcDirs = ["src/main/res"]
+        }
+    }
+}
+
+jar {
+    archiveBaseName = 'DataDriven'
+    archiveVersion = '0.1'
+    manifest {
+        attributes 'Main-Class': 'com.uwaterloo.datadriven.Main'
+    }
+}
+
+dependencies {
+    implementation 'ch.qos.logback:logback-classic:1.3.14'
+    implementation group: 'com.google.guava', name: 'guava', version: '30.0-jre'
+    implementation fileTree(dir: 'lib', include: ['com.ibm.wala.*.jar'])
+    implementation fileTree(dir: 'lib', include: ['dexlib*.jar'])
+    implementation 'com.opencsv:opencsv:5.9'
+    implementation platform("com.typesafe.akka:akka-bom_${versions.ScalaBinary}:2.9.1")
+    implementation "com.typesafe.akka:akka-actor-typed_${versions.ScalaBinary}"
+}
+
+tasks.register('startAnalysis', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.uwaterloo.datadriven.Main'
+    systemProperties System.getProperties()
+}

@@ -1,0 +1,8 @@
+/build/
+/Input/
+/Output/
+.idea/
+.gradle/
+.DS_Store
+__pycache__/
+*.py[cod]
