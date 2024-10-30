@@ -121,12 +121,13 @@ public class FrameworkAnalyzer {
 
             for (FrameworkEp ep : parent.eps) {
                 try{
-                    System.out.println("Analyzing: " + ep.epMethod.getMethod().getSignature());
+//                    System.out.println("Analyzing: " + ep.epMethod.getMethod().getSignature());
                     Pair<AccessControlSource, HashSet<Pair<FrameworkField, FieldAccess>>> map = epAnalyzer.analyze(ep);
                     protectionLevelHashMap.put(ep.epMethod.getMethod().getSignature(), getMaxProtectionLevel(map.fst.ac()));
                     apis.put(ep.epMethod.getMethod().getSignature(), map);
                 } catch (Exception e) {
                     System.out.println("Error analyzing " + ep.epMethod.getMethod().getSignature());
+                    System.out.println(e.getMessage());
                 }
                 count++;
                 int progress = (int) ((double) count / total * 100);

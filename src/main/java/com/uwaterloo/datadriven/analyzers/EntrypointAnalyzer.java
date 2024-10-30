@@ -112,35 +112,35 @@ public class EntrypointAnalyzer {
 //                    fields.addAll(fieldAccesses);
 //                }
 //            }
-        else if (ins instanceof SSAAbstractInvokeInstruction abIns
-                    && ChaUtils.shouldAnalyze(abIns.getDeclaredTarget().getDeclaringClass(), cha)
-                    && visitedWeirdInv.add(abIns)){
-                try {
-                    CGNode nextNode = null;
-                    try {
-                        nextNode = icfg.getCallGraph().getNode(cha.resolveMethod(
-                                abIns.getDeclaredTarget()), block.getNode().getContext());
-                    } catch (Exception | UnimplementedError e) {
-                        //ignore
-                    }
-                    if (nextNode == null) {
-                        try {
-                            CallGraph cg = CachedCallGraphs.buildSingleEpCg(abIns.getDeclaredTarget(), cha);
-                            if (cg != null) {
-                                InterproceduralCFG nextIcfg = new InterproceduralCFG(cg);
-                                BasicBlockInContext<ISSABasicBlock> nextB = nextIcfg
-                                        .getEntry((CGNode) nextIcfg.getCallGraph()
-                                                .getEntrypointNodes().toArray()[0]);
-                                curBlockStack.push(Pair.make(nextIcfg, nextB));
-                            }
-                        } catch (Exception e) {
-                            //ignore
-                        }
-                    }
-                } catch (Exception | UnimplementedError e) {
-                    //ignore
-                }
-            }
+//        else if (ins instanceof SSAAbstractInvokeInstruction abIns
+//                    && ChaUtils.shouldAnalyze(abIns.getDeclaredTarget().getDeclaringClass(), cha)
+//                    && visitedWeirdInv.add(abIns)){
+//                try {
+//                    CGNode nextNode = null;
+//                    try {
+//                        nextNode = icfg.getCallGraph().getNode(cha.resolveMethod(
+//                                abIns.getDeclaredTarget()), block.getNode().getContext());
+//                    } catch (Exception | UnimplementedError e) {
+//                        //ignore
+//                    }
+//                    if (nextNode == null) {
+//                        try {
+//                            CallGraph cg = CachedCallGraphs.buildSingleEpCg(abIns.getDeclaredTarget(), cha);
+//                            if (cg != null) {
+//                                InterproceduralCFG nextIcfg = new InterproceduralCFG(cg);
+//                                BasicBlockInContext<ISSABasicBlock> nextB = nextIcfg
+//                                        .getEntry((CGNode) nextIcfg.getCallGraph()
+//                                                .getEntrypointNodes().toArray()[0]);
+//                                curBlockStack.push(Pair.make(nextIcfg, nextB));
+//                            }
+//                        } catch (Exception e) {
+//                            //ignore
+//                        }
+//                    }
+//                } catch (Exception | UnimplementedError e) {
+//                    //ignore
+//                }
+//            }
         }
 
         //add next blocks in dfs stack
