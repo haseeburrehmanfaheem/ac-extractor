@@ -18,11 +18,13 @@ import com.uwaterloo.datadriven.utils.CsvUtils;
 import com.uwaterloo.datadriven.utils.PropertyUtils;
 import com.uwaterloo.datadriven.utils.ScopeUtil;
 import java.util.concurrent.*;
+import java.util.*;
 
 import java.io.*;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.uwaterloo.datadriven.utils.AccessControlUtils.getMaxProtectionLevel;
 
@@ -114,25 +116,49 @@ public class FrameworkAnalyzer {
         parents.addAll(systemReceivers);
         EntrypointAnalyzer epAnalyzer = new EntrypointAnalyzer(cha, curProtections);
         int total = parents.stream().mapToInt(parent -> parent.eps.size()).sum(); // Total number of FrameworkEp items
-        int count = 0;
+
+
+        System.out.println("Available processors: " + Runtime.getRuntime().availableProcessors());
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+        List<Future<?>> futures = new ArrayList<>();
+        AtomicInteger count = new AtomicInteger(0);
+
+
         for (FrameworkParent parent : parents) {
-            HashMap<String, Pair<AccessControlSource, HashSet<Pair<FrameworkField, FieldAccess>>>> apis = new HashMap<>();
+            Future<?> future = executor.submit(() -> {
+                HashMap<String, Pair<AccessControlSource, HashSet<Pair<FrameworkField, FieldAccess>>>> apis = new HashMap<>();
+
+                for (FrameworkEp ep : parent.eps) {
+                    try {
+                        System.out.println("Analyzing: " + ep.epMethod.getMethod().getSignature());
+                        Pair<AccessControlSource, HashSet<Pair<FrameworkField, FieldAccess>>> map = epAnalyzer.analyze(ep);
+                        protectionLevelHashMap.put(ep.epMethod.getMethod().getSignature(), getMaxProtectionLevel(map.fst.ac()));
+                        apis.put(ep.epMethod.getMethod().getSignature(), map);
+                    } catch (Exception e) {
+                        System.out.println("Error analyzing " + ep.epMethod.getMethod().getSignature());
+                    }
 
 
-            for (FrameworkEp ep : parent.eps) {
-                try{
-                    System.out.println("Analyzing: " + ep.epMethod.getMethod().getSignature());
-                    Pair<AccessControlSource, HashSet<Pair<FrameworkField, FieldAccess>>> map = epAnalyzer.analyze(ep);
-                    protectionLevelHashMap.put(ep.epMethod.getMethod().getSignature(), getMaxProtectionLevel(map.fst.ac()));
-                    apis.put(ep.epMethod.getMethod().getSignature(), map);
-                } catch (Exception e) {
-                    System.out.println("Error analyzing " + ep.epMethod.getMethod().getSignature());
+                    int progress = (int) ((double) count.incrementAndGet() / total * 100);
+                    System.out.print("\rProgress: " + progress + "% (" + count.get() + "/" + total + ")");
                 }
-                count++;
-                int progress = (int) ((double) count / total * 100);
-                System.out.print("\rProgress: " + progress + "% (" + count + "/" + total + ")");
+            });
+
+            futures.add(future);
+        }
+
+// Wait for all tasks to complete
+        for (Future<?> future : futures) {
+            try {
+                future.get(); // This will block until the task is complete
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
             }
         }
+
+// Shutdown the executor service
+        executor.shutdown();
         System.out.println("\nDone all.");
     }
 
