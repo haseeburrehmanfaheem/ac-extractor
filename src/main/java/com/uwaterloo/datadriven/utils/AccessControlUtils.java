@@ -111,6 +111,9 @@ public class AccessControlUtils {
     }
 
     public static ProtectionLevel getMaxProtectionLevel(AccessControl ac){
+        if (ac == null) {
+            return ProtectionLevel.NONE;
+        }
         if(ac instanceof ConjunctiveAccessControl){
             return getMaxProtectionLevel((ConjunctiveAccessControl) ac);
         }
