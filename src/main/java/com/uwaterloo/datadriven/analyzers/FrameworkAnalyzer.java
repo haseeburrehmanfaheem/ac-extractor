@@ -133,7 +133,7 @@ public class FrameworkAnalyzer {
                     try {
                         System.out.println("Analyzing: " + ep.epMethod.getMethod().getSignature());
                         Pair<AccessControlSource, HashSet<Pair<FrameworkField, FieldAccess>>> map = epAnalyzer.analyze(ep);
-                        protectionLevelHashMap.put(ep.epMethod.getMethod().getSignature(), getMaxProtectionLevel(map.fst.ac()));
+                        protectionLevelHashMap.put(ep.epMethod.getMethod().getSignature(), getMaxProtectionLevel(map == null ? null : map.fst.ac()));
                         apis.put(ep.epMethod.getMethod().getSignature(), map);
                     } catch (Exception e) {
                         System.out.println("Error analyzing " + ep.epMethod.getMethod().getSignature());

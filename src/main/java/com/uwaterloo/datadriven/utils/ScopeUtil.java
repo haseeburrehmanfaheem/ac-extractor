@@ -60,32 +60,36 @@ public class ScopeUtil {
 //            if (!p.getFileName().toString().contains("framework") && !p.getFileName().toString().contains("service"))
 //                continue;
 
-            System.out.println("ADDING " + p);
-            DexFileModule dexModule = DexFileModule.make(new File(p.toString()));
+            try {
+                System.out.println("ADDING " + p);
+                DexFileModule dexModule = DexFileModule.make(new File(p.toString()));
 
-            AnalysisScope appScope = AnalysisScopeReader.instance.readJavaScope("primordial.txt", new File(exclusion_path), AnalysisScopeReader.class.getClassLoader());
-            appScope.addInputStreamForJarToScope(ClassLoaderReference.Primordial, new FileInputStream(android_path));
-            appScope.setLoaderImpl(ClassLoaderReference.Application, "com.ibm.wala.dalvik.classLoader.WDexClassLoaderImpl");
-            appScope.addToScope(ClassLoaderReference.Application, dexModule);
-            ClassHierarchy appCha = ClassHierarchyFactory.make(appScope);
+                AnalysisScope appScope = AnalysisScopeReader.instance.readJavaScope("primordial.txt", new File(exclusion_path), AnalysisScopeReader.class.getClassLoader());
+                appScope.addInputStreamForJarToScope(ClassLoaderReference.Primordial, new FileInputStream(android_path));
+                appScope.setLoaderImpl(ClassLoaderReference.Application, "com.ibm.wala.dalvik.classLoader.WDexClassLoaderImpl");
+                appScope.addToScope(ClassLoaderReference.Application, dexModule);
+                ClassHierarchy appCha = ClassHierarchyFactory.make(appScope);
 
-            IClassLoader appLoader = appCha.getFactory().getLoader(ClassLoaderReference.Application, appCha, appScope);
-            Set<IClass> toRemove = new HashSet<>();
-            Iterator<IClass> appIter = appLoader.iterateAllClasses();
-            while (appIter.hasNext()) {
-                IClass k = appIter.next();
-                toRemove.add(k);
+                IClassLoader appLoader = appCha.getFactory().getLoader(ClassLoaderReference.Application, appCha, appScope);
+                Set<IClass> toRemove = new HashSet<>();
+                Iterator<IClass> appIter = appLoader.iterateAllClasses();
+                while (appIter.hasNext()) {
+                    IClass k = appIter.next();
+                    toRemove.add(k);
+                }
+
+                IClassLoader oriLoader = cha.getFactory().getLoader(ClassLoaderReference.Application, cha, scope);
+                oriLoader.removeAll(toRemove);
+
+                scope.setLoaderImpl(ClassLoaderReference.Application, "com.ibm.wala.dalvik.classLoader.WDexClassLoaderImpl");
+                scope.addToScope(ClassLoaderReference.Application, dexModule);
+                ArrayList<Module> list = new ArrayList<>();
+                list.add(dexModule);
+                oriLoader.init(list);
+                cha = ClassHierarchyFactory.make(scope, cha.getFactory());
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-            IClassLoader oriLoader = cha.getFactory().getLoader(ClassLoaderReference.Application, cha, scope);
-            oriLoader.removeAll(toRemove);
-
-            scope.setLoaderImpl(ClassLoaderReference.Application, "com.ibm.wala.dalvik.classLoader.WDexClassLoaderImpl");
-            scope.addToScope(ClassLoaderReference.Application, dexModule);
-            ArrayList<Module> list = new ArrayList<>();
-            list.add(dexModule);
-            oriLoader.init(list);
-            cha = ClassHierarchyFactory.make(scope, cha.getFactory());
         }
     }
 }
